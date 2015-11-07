@@ -1,0 +1,1746 @@
+/*******************************************
+ * World Simulator: Current prototype
+ * 0ws.00203a
+ * 
+********************************************/
+
+/** Code **/
+//Foundation
+
+var state = "menu";
+var substate = "font-fix";
+
+var fonts = {
+    font1: createFont ("Century Gothic"),
+    font2: createFont ("Segoe UI Light"),
+    font3: createFont ("Microsoft Sans"),
+    font4: createFont ("Comfortaa"),
+    font5: createFont ("Heiti SC"),
+    font6: createFont ("Neutronium")
+};
+
+//Color (Sorted by section and type)
+var color1 = 150;
+var color2 = 204;
+var color3 = 255;
+var colorChange = true;
+
+var colorScheme = {
+    //UI
+    de: color(0, 149, 255, 150),
+    box: color(245, 245, 245),
+    white: color(255, 255, 255),
+    boxa: color(149, 163, 179),
+    green: color(0, 224, 34),
+    
+    ui1: color(138, 138, 138),
+    ui2: color(199, 199, 199),
+    ui3: color(84, 84, 84),
+    ui4: color(20, 161, 255),
+    ui5: color(236, 240, 241),
+    
+    //Outlines
+    gclui1: color(237, 237, 237),
+    gcOtl: color(194, 194, 194),
+    gcOtlDRK: color(145, 145, 145),
+    
+    //Icon
+    iconDARK: color(133, 133, 133),
+    
+    //Flat design UI
+    flatdesign1: color(149, 165, 166),
+    flatdesign2: color(52, 73, 94),
+    flatdesign3: color(46, 204, 113),
+    flatdesign4: color(52, 152, 219),
+    flatdesign5: color(41, 128, 185),
+    flatdesign6: color(26, 188, 156),
+    flatdesign7: color(216, 228, 237),
+    flatdesign8: color(241, 196, 15),
+    flatdesign9: color(231, 76, 60),
+    
+    happiness3: color(255, 213, 0),
+    
+    //Greys
+    lightGrey1: color(240, 240, 240),
+    lightGrey2: color(214, 214, 214),
+    
+    greenGrey1: color(189, 189, 189),
+    greenGrey2: color(162, 176, 157),
+    greenGrey3: color(120, 140, 120)
+    
+    //Greens
+    
+    //Reds
+    
+    //Blues
+    
+    //Browns and yellows
+};
+/** Menu Art **/
+
+var MENU_ART = function(){
+    
+    //Find mouse position
+    text("mouseX: " +mouseX + "\nmouseY: " +mouseY, 500, 500);
+    
+    //Frame
+    stroke(colorScheme.lightGrey2);
+    strokeWeight(10);
+    noFill();
+    
+    beginShape();
+    vertex(0, 300);
+    vertex(225, 300);
+    vertex(275, 250);
+    endShape();
+    
+    line(240, 250, 325, 250);
+    
+    beginShape();
+    vertex(300, 250);
+    vertex(350, 200);
+    vertex(1200, 200);
+    endShape();
+    
+    //Start hill foreground
+    
+    /*
+    For those wondering how I came up with 
+    the design, I used a fractal design to
+    not perfectly, but closely create sorta
+    realistic shading.
+    */
+    
+    pushMatrix();
+    
+    scale(0.5);
+    translate(0, 800);
+    stroke(colorScheme.greenGrey1);
+    fill(colorScheme.greenGrey1);
+    strokeWeight(1);
+    
+    beginShape();
+    vertex(0, 500);
+    vertex(15, 505);
+    vertex(20, 515);
+    vertex(24, 535);
+    vertex(29, 545);
+    vertex(34, 549);
+    vertex(36, 560);
+    vertex(39, 580);
+    vertex(41, 585);
+    vertex(42, 585.5);
+    vertex(45, 587);
+    vertex(49, 588);
+    vertex(65, 592);
+    vertex(71, 598);
+    vertex(71.5, 601);
+    vertex(73.5, 609);
+    vertex(114, 664);
+    vertex(158, 800);
+    vertex(0, 800);
+    endShape(CLOSE);
+    
+    stroke(colorScheme.greenGrey2);
+    fill(colorScheme.greenGrey2);
+    
+    beginShape();
+    vertex(0, 500);
+    vertex(11, 507);
+    vertex(15, 515);
+    vertex(16, 525);
+    vertex(19, 550);
+    vertex(21, 552);
+    vertex(28, 567);
+    vertex(30, 590);
+    vertex(50, 650);
+    vertex(92, 692);
+    vertex(100, 760);
+    vertex(120, 800);
+    vertex(0, 800);
+    endShape();
+    
+    stroke(colorScheme.greenGrey3);
+    fill(colorScheme.greenGrey3);
+    
+    beginShape();
+    vertex(40, 620);
+    vertex(35, 630);
+    vertex(30, 634);
+    vertex(26, 670);
+    vertex(19, 680);
+    vertex(9, 684);
+    vertex(0, 694);
+    vertex(0, 800);
+    vertex(8, 750);
+    vertex(27, 709);
+    vertex(35, 676);
+    vertex(45, 640);
+    endShape();
+    
+    popMatrix();
+    
+    //Foreground terrain
+    
+    pushMatrix();
+    
+    popMatrix();
+};
+
+/** Play variables **/
+//UI Design
+
+//Text (Function made by TB12P and Patrick Z)
+var getBrowser = function() {
+    var b = "unknown";
+    try {
+        var e;
+        var f = e.width;
+    } catch (error) {
+        var err = error.toString();
+        if (err.search("not an object") !== -1) {
+            return "Safari";
+        } else if (err.search("Cannot read") !== -1) {
+            return "Chrome";
+        } else if (err.search("e is undefined") !== -1) {
+            return "Firefox";
+        } else if (err.search("Unable to get property 'width' of undefined or null reference") !== -1){
+            return "Internet Explorer";
+        } else if (err.search("cannot convert e into object") !== -1) {
+            return "Opera";
+        } else {
+            return "I don't know!";
+        }
+    }
+};
+
+//Time
+var timeSpeed = 1;
+var hr = 12;
+var mn = 0;
+var mnT = "00";
+var timeAdd;
+
+var money = {
+    amount: 50000,
+    expenses: -0,
+    revenue: 0,
+    profit: 0
+};
+
+var AM = false;
+var DATE = 1;
+var TIMES = [1, 2, 3];
+var paused = false;
+
+var time = function(){
+    //Time function
+    mnT = floor(mn);
+    if(mn > 10){
+        mnT = floor(mn);
+    } else if (mn < 10) {
+        mnT = "0"+floor(mn);
+    }
+    
+    //Different timespeeds
+    //Slow
+    if(timeSpeed === 1){
+        timeAdd = 0.015;
+    }
+    
+    //Medium
+    if(timeSpeed === 2){
+        timeAdd = 0.075;
+    }
+    
+    //Fast
+    if(timeSpeed === 3){
+        timeAdd = 0.15;
+    }
+    mn += timeAdd;
+    
+    //Collect them profits!
+    if(mn > 60){
+        mn = 0;
+        mnT = "00";
+        hr += 1;
+        money.amount+=money.profit;
+    }
+    if (hr>12){hr=1; DATE+=0.5;}
+    
+    if (DATE%1===0){AM="AM";}
+    else{AM="PM";}
+    
+};
+
+//City and Region
+var cityNames = {
+    Verdant_Jungle: [
+    "Tamarin Island",
+    "Jaguar Ridge",
+    "Anaconda Bay", 
+    "Osprey" 
+    ]
+};
+
+var region;
+var city;
+
+//Happiness
+
+//Happiness face
+var blink = false;
+var blinkProcessOver = true;
+var blinkHalf = false;
+
+var blkPos1 = 15;
+var blkPos2 = 0;
+
+var blkVelo = 2.5;
+
+var slightWobble = 0.075;
+var slightWobbleSpeed = 0;
+var wobble = true;
+var wobbleHalf = false;
+
+var happiness_FACES = function(x, y){
+    strokeWeight(2);
+    stroke(colorScheme.ui2);
+    noFill();
+    ellipse(x - 5, y - 5, 35, 35);
+    
+    fill(colorScheme.white);
+    ellipse(x, y, 75, 75);
+    
+    stroke(179, 179, 179);
+    strokeWeight(5);
+    
+    line(x - 10, y - blkPos1, x - 10, y);
+    line(x + 10, y - blkPos1, x + 10, y);
+    
+    if(frameCount % floor(random(100, 600)) === 0){
+        blink = true;
+        blinkProcessOver = false;
+    }
+    
+    if(blkPos1 <= 2){
+        blinkHalf = true;
+    }
+    
+    if(blink === true && blinkProcessOver === false && blinkHalf === false){
+        blkPos1 -= blkVelo;
+    }
+    
+    if(blink === true && blinkProcessOver === false && blinkHalf === true){
+       blkPos1 += blkVelo; 
+    }
+    
+    if(blkPos1 >= 15){
+        blink = false;
+        blinkProcessOver = true;
+        blinkHalf = false;
+    }
+    
+    line(x - 8, y + 16, x + 7, y + 16);  
+};
+
+//Overall happiness
+var happiness = 3;
+
+//Sayings display string
+var DisplayString;
+
+/** Contructors and OOP **/
+//Button constructor and build setup
+
+var Button = function(configuration){
+    this.x = configuration.x;
+    this.y = configuration.y;
+    this.type = configuration.type;
+    this.XSize = configuration.XSize;
+    this.YSize = configuration.YSize;
+    
+    this.text = configuration.text;
+    
+    this.onClick = configuration.onClick || function(){};
+};
+
+Button.prototype.draw = function() {
+    /*Hover algorithm
+    Tests if mouseX and Y are in the button object
+
+    Makes a lighter grey
+    Creates a better button effect
+    */
+    
+    //Create types of buttons
+    
+    if(this.type === 1){
+        //pushMatrix();
+        
+        if(mouseX > this.x && mouseY > this.y && mouseX < this.x +       
+    this.XSize && mouseY < this.y + this.YSize) {
+            color2 = 225;
+        } else {
+           color2 = 204;
+        }
+        
+        fill(color2);
+        rect(this.x, this.y, this.XSize, this.YSize, 5);
+
+        fill(56, 56, 56);
+        textSize(this.YSize / 1.75);
+        text(this.text, this.x + 10, this.y + this.YSize / 1.45);
+        
+        //popMatrix();
+        
+    }
+    
+    if(this.type === 2){
+        
+        if(dist(mouseX, mouseY, this.x, this.y) < this.XSize/2){
+            color2 = 225;
+        } else {
+            color2 = 204;
+        }
+        
+        fill(color2);
+        ellipse(this.x, this.y, this.XSize, this.YSize);
+    }
+    
+    if(this.type === 3){
+        //pushMatrix();
+        
+        if(mouseX > this.x && mouseY > this.y && mouseX < this.x +       
+    this.XSize && mouseY < this.y + this.YSize) {
+            color2 = 225;
+        } else {
+           color2 = 204;
+        }
+        
+        fill(color2);
+        rect(this.x, this.y, this.XSize, this.YSize, 5);
+
+        fill(56, 56, 56);
+        textSize(this.YSize / 1.75);
+        text(this.text, this.x + 10, this.y + this.YSize / 1.45);
+        
+        //popMatrix();
+    }
+    
+    if(this.type === 4){
+        if(dist(mouseX, mouseY, this.x, this.y) < this.XSize/2){
+            color2 = 225;
+        } else {
+            color2 = 204;
+        }
+        noStroke();
+        fill(color2, color2, color2, 100);
+        ellipse(this.x, this.y, this.XSize, this.YSize);
+    }
+    
+    if(this.type === 5){
+        if(mouseX > this.x && mouseY > this.y && mouseX < this.x +       
+    this.XSize && mouseY < this.y + this.YSize) {
+            color2 = 255;
+        } else {
+           color2 = 204;
+        }
+        
+        noStroke();
+        if(color2 === 255){
+            fill(color2, color2, color2, 100);
+        } else { noFill(); }
+        rect(this.x, this.y, this.XSize, this.YSize, 10);
+    }
+};
+
+Button.prototype.mouseClicked = function(){
+    if(state === "menu"){
+        if(this.type === 1){
+            if(mouseX > this.x && mouseY > this.y && mouseX < this.x + this.XSize && mouseY < this.y + this.YSize){
+                this.onClick();
+            }
+        }
+    }
+    if(state === "play"){
+        if(this.type === 4){
+            if(dist(mouseX ,mouseY, this.x, this.y) < this.XSize/2){
+                this.onClick();
+            }
+        }
+        
+        if(this.type === 5){
+            if(mouseX > this.x && mouseY > this.y && mouseX < this.x + this.XSize && mouseY < this.y + this.YSize){
+                this.onClick();
+            }
+        }
+    }
+        
+    if(state === "options"){
+        if(this.type === 3){
+            if(mouseX > this.x && mouseY > this.y && mouseX < this.x + this.XSize && mouseY < this.y + this.YSize){
+                this.onClick();
+            }
+        }
+    }
+};
+
+//Icon constructor and build setup
+var Icon = function(x, y, type, size, color){
+    this.x = x;
+    this.y = y;
+    
+    this.type = type;
+    this.size = size;
+};
+
+Icon.prototype.draw = function() {
+    //Simoleon
+    if(this.type === 1){
+        textSize(this.size);
+        
+        fill(this.color);
+        text("§", this.x, this.y);
+    }
+    
+    //Medium face
+    if(this.type === 2){
+        fill(colorScheme.ui);
+        ellipse(this.x, this.y, this.size, this.size);
+        
+        noFill();
+        stroke(colorScheme.iconDARK);
+        strokeWeight(0.2);
+        ellipse(this.x, this.y, this.size - 2.3, this.size - 2.3);
+        
+        stroke(179, 179, 179);
+        strokeWeight(3);
+        
+        line(this.x - 4, this.y - 5, this.x - 4, this.y + -2);
+        line(this.x + 4, this.y - 5, this.x + 4, this.y + -2);
+        line(this.x - 3, this.y + 4, this.x + 2, this.y + 4);
+    }
+};
+
+/** Generation and Algorithms **/
+//Generating variables
+var generateLandValue = round(random(200,255));
+var generateEducation = round(random(1000));
+
+//Building Properties
+var buildingType = "";
+var buildings = [];
+var buildingsNames = {
+    residential: {
+        a: {
+        low: [
+            "Heathwood Residence",
+            "Khan Residence",
+            "Blake Residence",
+            "William Residence",
+            "Ethan Residence",
+            "Li Reseidence"
+        ],
+        med: [
+            "Heathwood Home",
+            "Khan Household",
+            "William Household",
+            "Ethan Home",
+            "Evans Home"
+        ],
+        hi: [
+            "Heathwood Estate",
+            "Padder Estate",
+            "Parkill Estate",
+            "Liu Estate",
+            "Murphy Residence",
+            "Evans Estate",
+            "Suayer Estate"
+        ]
+    },
+    b: {
+        low: [
+            "Heathwood Apartments",
+            "SKY5 Apartments",
+            "Apex Lofts",
+            "Albor Tenements"
+        ],
+        med: [
+            "Heathwood Condos",
+            "Olno Condos"
+        ],
+        hi: [
+            "Heathwood Luxury Apartments",
+            "SKY5 Luxury Apartments"
+        ]
+    },
+    c: {
+        low: [
+            "Heathwood Tenements",
+            "Bulkhead Tenements",
+            "Vonable Apartments",
+            "Padder Tenements",
+            "Napper Tenements",
+            "Durnford West",
+            "Durnford East",
+            "The Flea Pit", //I can have proof of this one! I laughed out loud when I saw it...
+            "Moore Building",
+            "Westgate Tower",
+            "Plaza Tower",
+            "The Rodentia",
+            "Brown Building",
+            "Briarglen Tower"
+            
+        ],
+        med: [
+            "Heather Heights",
+            "Heathwood Condominiums",
+            "Aileen Condominiums",
+            "Padder Condominiums",
+            "Sherman Plaza",
+            "Brannan Lofts",
+            "Blu Condos"
+        ],
+        hi: [
+            "Heathwood Skyrise",
+            "Khan Skyrise",
+            "Metropolian West",
+            "Skyriser",
+            "Thamos Highrise",
+            "Helius One",
+            "Helius Two", 
+            "Helius Three",
+            "The Apex",
+            "Platinum Peak",
+            "SkyTower One",
+            "SkyTower Two",
+            "SkyTower Three",
+            "The Promethean",
+            "The Aerie",
+            "The Emerald",
+            "The Houstonian",
+            "Dreame Tower West",
+            "Dreame Tower East",
+            "The Westminster",
+            "Esper Vertcommune", 
+            "Park Savoy",
+            "The Onyxlux",
+            "The Empire",
+            "Elysian Heights",
+            "The Highfalutin",
+            "Ivory Towers",
+            "The One Percent",
+            "The Osmium Shard",
+            "Metropolian East",
+            "Athus Towers",
+            "Nexus Skyrise",
+            "The Beacon",
+            "Ultrarich Tower"
+        ]
+    }
+    },
+    
+};
+var lololol = round(random(buildingsNames.residential.c.hi.length));
+
+var mouseTick = 0;
+var PmouseX, PmouseY;
+var buildingsSayings = {
+    moveInSayings: [
+    "We just moved in, so we don't\n know what to think.",
+    "What would we know?",
+    "This looks good...",
+    "We're okay...",
+    "Just moved!",
+    "Maybe you can ask \nsomeone else!",
+    "We don't know."
+],
+    goodSayings: [
+    "We love it here!",
+    "This is an amazing city!",
+    "Awesome!",
+    "We love living here!",
+    "Telling all our friends \nto move here!",
+    "Cool city, dude!",
+    "Cool, man.",
+    "This is great!",
+    "Wow, what a nice city!"
+],
+    badSayings: [
+    "We're moving out.",
+    "It's been nice..., but we're moving out",
+    "It's terrible here!",
+    "Hate it! Hate it! \nHate it!",
+    "Yuck! Everything is horrible.",
+    "Goodbye, you terrible mayor!",
+    "We hope this city \ngoes bankrupt!",
+    "*#^&$*#^$&^& #$^&%*$\n#&& $^&#*%&)@&*#!!!!!!!!",
+    "You are such an idiot citybuilder!"
+],
+    newCitySayings: [
+    "A fresh start!",
+    "Nice, a new city!",
+    "Clean, new city!",
+    "Starting for scratch, huh?"
+    ]
+};
+var buildingLevel = 3;
+var generateBuildingSayings = buildingsSayings.goodSayings[round(random(0, buildingsSayings.goodSayings.length-1))];
+
+//When a building is created, then add a saying, a name, and a happiness value to it.
+
+//This building is a sample building 
+buildings.push({
+    name: buildingsNames.residential.c.hi[lololol],
+    
+    happy: 2, //Out of 255/Level
+    saying: buildingsSayings.goodSayings[1],
+    landValue: generateLandValue, //Out of 255
+    density: buildingLevel,
+    textsize: 22,
+    educationL: generateEducation, //Out of 255/Level
+    people: {
+        senior: round(random(30)),
+        adult: round(random(30)),
+        student: round(random(30)),
+        teen: round(random(30)),
+        child: round(random(30)),
+        total: undefined
+    },
+    employedPcent: round(random(100)),
+    level: round(this.happy/255)
+});
+
+//Happiness variables
+var commercialHappiness = 0.5;
+var residencialHappiness = 0.5;
+var industrialHappiness = 0.5;
+
+var overallHappiness = (commercialHappiness + industrialHappiness + residencialHappiness) / 3;
+
+//Find Random Sayings based on happiness
+
+var newCity = true;
+var RandSayingsUpdate = function(){
+    var RandomNumber = (random(0));
+    var SelectDString = round(random(0,8));
+    switch(happiness){
+        case 5:
+            if(RandomNumber === 5){
+                DisplayString = buildingsSayings.badSayings[SelectDString];
+            }
+            else{
+                DisplayString = buildingsSayings.goodSayings[SelectDString];
+            }
+            break;
+        case 4:
+            if(RandomNumber >= 4){
+                DisplayString = buildingsSayings.badSayings[SelectDString];
+            }
+            else{
+                DisplayString = buildingsSayings.goodSayings[SelectDString];
+            }
+            break;
+        case 3:
+            if(RandomNumber >= 3){
+                DisplayString = buildingsSayings.badSayings[SelectDString];
+            }
+            else{
+                DisplayString = buildingsSayings.goodSayings[SelectDString];
+            }
+            break;
+        case 2:
+            if(RandomNumber >= 2){
+                DisplayString = buildingsSayings.badSayings[SelectDString];
+            }
+            else{
+                DisplayString = buildingsSayings.goodSayings[SelectDString];
+            }
+            break; 
+        case 1:
+            if(RandomNumber === 1){
+                DisplayString = buildingsSayings.badSayings[SelectDString];
+            }
+            else{
+                DisplayString = buildingsSayings.goodSayings[SelectDString];
+            }
+            break;
+    }
+    
+    if(newCity === true){
+        DisplayString = buildingsSayings.newCitySayings[round(random(0, 3))];
+    }
+};
+RandSayingsUpdate();
+//Set population randomizer algorithm
+{
+buildings[0].people.total = buildings[0].people.adult + buildings[0].people.senior + buildings[0].people.student + buildings[0].people.teen + buildings[0].people.child;
+for(var i = 0; i<buildings.length; i++){
+    Program.assertEqual(buildings[i].people.total,buildings[i].people.senior + buildings[i].people.adult + buildings[i].people.student + buildings[i].people.teen + buildings[i].people.child);
+}}
+var frameTick = 0;
+/*mousePressed = function(){
+    mouseTick++;
+    PmouseX = mouseX;
+    PmouseY = mouseY;
+    if(mouseTick === 3){
+        mouseTick = 1;
+    }
+};*/
+
+/** Declare the buttons **/
+{
+var MENU_PLAY_BUTTON = new Button({
+    x: 25,
+    y: 125, 
+    type: 1, 
+    XSize: 200,
+    YSize: 30,
+    
+    text:  "Play",
+    
+    onClick: function(){
+        state = "play";
+    }
+});
+
+var MENU_OPTIONS_BUTTON = new Button({
+    x: 25,
+    y: 165, 
+    type: 1, 
+    XSize: 200,
+    YSize: 30,
+    
+    text:  "Options",
+    
+    onClick: function(){
+        state = "options";
+    }
+});
+
+var MENU_HELP_BUTTON = new Button({
+    x: 25,
+    y: 205, 
+    type: 1, 
+    XSize: 200,
+    YSize: 30,
+    
+    text:  "Help",
+    
+    onClick: function(){
+        state = "help";
+    }
+});
+
+var OPTIONS_GRAPHICS_BUTTON1 = new Button({
+    x: 25,
+    y: 100,
+    type: 3,
+    XSize: 150,
+    YSize: 30,
+    
+    text: "Graphics",
+    
+    onClick: function(){
+        substate = "OPTIONS_graphics";
+    }
+});
+
+var OPTIONS_GAMEPLAY_BUTTON1 = new Button({
+    x: 180,
+    y: 100,
+    type: 3,
+    XSize: 150,
+    YSize: 30,
+    
+    text: "Gameplay",
+    
+    onClick : function(){
+        substate = "OPTIONS_gameplay";
+    }
+});
+
+var OPTIONS_DEVELOPER_BUTTON1 = new Button({
+    x: 335,
+    y: 100,
+    type: 3,
+    XSize: 150,
+    YSize: 30,
+    
+    text: "Developer",
+    
+    onClick : function(){
+        substate = "OPTIONS_developer";
+    }
+});
+
+var PLAY_HAPPINESS_BUTTON1 = new Button({
+    x: 410,
+    y: 777,
+    type: 4,
+    XSize: 27.5,
+    YSize: 27.5,
+    
+    text: "",
+    
+    onClick : function(){
+        if(substate !== "PLAY:happiness"){
+            substate = "PLAY:happiness";
+        } else {
+            substate = "none";
+        }
+    }
+    
+});
+
+var PLAY_CITY_NAME_BUTTON = new Button({
+    x: 160, 
+    y: 765,
+    type: 5,
+    XSize: 225,
+    YSize: 25,
+    
+    text: "",
+    
+    onClick: function(){
+        if(substate !== "PLAY:cityname"){
+            substate = "PLAY:cityname";
+        } else {
+            substate = "none";
+        }
+    }
+});
+
+var PLAY_TIME_SPEED_BUTTON = new Button({
+    x: 95, 
+    y: 765,
+    type: 5,
+    XSize: 35,
+    YSize: 25,
+    
+    text: "",
+    
+    onClick: function(){
+        timeSpeed ++;
+        if (timeSpeed === 4){
+            timeSpeed = 1;
+        }
+    }
+});
+
+var PLAY_MONEY_BUTTON1 = new Button({
+    x: 435,
+    y: 765,
+    type: 5,
+    XSize: 225,
+    YSize: 35,
+    
+    text: "",
+    
+    onClick: function(){
+        if(substate !== "PLAY:money"){
+            substate = "PLAY:money";
+        } else {
+            substate = "none";
+        }
+    }
+});
+
+}
+
+/** Declare the icons **/
+{var moneyIcon = new Icon(200, 200, 1, 20, color(5, 232, 77));
+
+var happiness_FACE3 = new Icon(410, 777, 2, 27.5);
+}
+
+/** Options Variables **/
+
+//Interactive variables
+var linePos1 = 0;
+var linePos2 = 0;
+var linePos3 = 0;
+
+var beginLineMovement = false;
+
+var lnMv1 = false;
+var lnMv2 = false;
+var lnMv3 = false;
+
+var lnAccel1 = 0.125;
+var lnAccel2 = 0.25;
+var lnAccel3 = 0.2;
+
+var lnVelo1 = 0;
+var lnVelo2 = 0;
+var lnVelo3 = 0;
+
+//Mouseclicked function
+var mouseClicked = function() {
+    //Menu buttons
+    MENU_PLAY_BUTTON.mouseClicked ();
+    MENU_OPTIONS_BUTTON.mouseClicked ();
+    MENU_HELP_BUTTON.mouseClicked ();
+    
+    //Play buttons
+    PLAY_TIME_SPEED_BUTTON.mouseClicked ();
+    PLAY_HAPPINESS_BUTTON1.mouseClicked ();
+    PLAY_CITY_NAME_BUTTON.mouseClicked ();
+    PLAY_MONEY_BUTTON1.mouseClicked ();
+    
+    //Options buttons
+    OPTIONS_GRAPHICS_BUTTON1.mouseClicked ();
+    OPTIONS_GAMEPLAY_BUTTON1.mouseClicked ();
+    OPTIONS_DEVELOPER_BUTTON1.mouseClicked ();
+};
+
+/** Draw function **/
+
+var draw = function() {
+    background(242, 242, 242);
+    noStroke();
+    getBrowser();
+    
+    //Declare some stuff just for testing
+    region = "Verdant Jungle";
+    city = cityNames.Verdant_Jungle[1];
+    
+    if(state === "menu"){
+        pushMatrix();
+        
+        //Title Box
+        fill(71, 175, 255);
+        rect(0, 0, width, 100);
+
+        //Text for title
+        fill(242, 242, 242);
+        textFont(fonts.font4, 50);
+        textAlign(CENTER, CENTER);
+        text("World Simulator", width/2, 47.5);
+        
+        //Buttons
+        textAlign(BASELINE);
+        
+        MENU_PLAY_BUTTON.draw ();
+        MENU_OPTIONS_BUTTON.draw ();
+        MENU_HELP_BUTTON.draw ();
+        
+        //Art
+        //MENU_ART();
+        
+        popMatrix();
+        
+        //Bad font? No problem!
+        if(substate === "font-fix"){
+            fill(41, 41, 41, 150);
+            rect(0, 0, width, height);
+            
+            fill(242, 242, 242);
+            rect(300, 200, 600, 400, 10);
+            
+            textFont(fonts.font4);
+            textSize(30);
+            textAlign(CENTER, CENTER);
+            
+            fill(0, 0, 0);
+            text("Bad font?", 600, 225);
+            
+            textFont(fonts.font2);
+            textSize(25);
+            text("Try changing it at the options tab.", 600, 267);
+            textFont(fonts.font1, 20);
+            text("World Simulator is compatible with a variety of fonts.", 600, 300);
+            textFont(fonts.font5, 20);
+            text("For Mac uses, this font looks great!", 600, 330);
+            textFont(fonts.font6, 20);
+            text("SWITCH FONT HERE:", 600, 360);
+            
+        }
+        
+    }
+
+    if(state === "play"){
+        background(163, 163, 163);
+        
+        //UI Design
+        for(var i = 215; i < 255; i += 1){
+            strokeWeight(1);
+            stroke(i);
+            line(0, i + 545, 1200, i + 545);
+        }
+        
+        pushMatrix();
+        
+        translate(0, 0);
+        
+        strokeWeight(0.5);
+        stroke(colorScheme.gcOtl);
+        fill(colorScheme.gclui1);
+        rect(5, 765, 125, 25, 15);
+        
+        line(37.5, 765, 37.5, 790);      
+        line(95, 765, 95, 790);
+        
+        translate(2.5, 0);
+        
+        //Pause sign
+        noStroke();
+        fill(135, 135, 135);
+        rect(22, 771.5, 5, 12.5);
+        rect(15, 771.5, 5, 12.5);
+        
+        //Elapsed time
+        translate(100, 773);
+        
+        //Create the outline for button
+        fill(colorScheme.gclui1);
+        PLAY_TIME_SPEED_BUTTON.draw();
+        
+        rect(95, 765, 20, 25);
+        ellipse(277.5, 765, 15, 25);
+        
+        //Slow
+        if(timeSpeed === 1){
+            fill(colorScheme.ui2);
+            triangle(0, 0, 0, 10, 7.5, 5);
+        }
+        
+        //Medium
+        if(timeSpeed === 2){
+            fill(colorScheme.ui2);
+            triangle(0, 0, 0, 10, 7.5, 5);
+            triangle(0 + 8, 0, 0 + 8, 10, 7.5 + 8, 5);
+        }
+        
+        //Fast
+        if(timeSpeed === 3){
+            fill(colorScheme.ui2);
+            triangle(0, 0, 0, 10, 7.5, 5);
+            triangle(0 + 8, 0, 0 + 8, 10, 7.5 + 8, 5);
+            triangle(0 + 16, 0, 0 + 16, 10, 7.5 + 16, 5);
+        }
+        
+        noFill();
+        stroke(colorScheme.ui1);
+        strokeWeight(1.3);
+        
+        noFill();
+        triangle(0, 0, 0, 10, 7.5, 5);
+        triangle(0 + 8, 0, 0 + 8, 10, 7.5 + 8, 5);
+        triangle(0 + 16, 0, 0 + 16, 10, 7.5 + 16, 5);
+        
+        popMatrix();
+        
+        //Time
+        translate(0, 0);
+        
+        textFont(fonts.font1);
+        fill(colorScheme.ui3);
+        textSize(15);
+        textSize(12.5);
+        textAlign(CENTER);
+        text(hr + ":" + mnT, 55.5, 783.5);
+        text(AM,82, 783.5);
+        time();
+        
+        //Name
+        textAlign(BASELINE);
+        textSize(15);
+        stroke(colorScheme.ui2);
+        strokeWeight(1);
+        line(145, 760, 145, 800);
+        
+        strokeWeight(0.5);
+        stroke(colorScheme.gcOtl);
+        fill(colorScheme.gclui1);
+        rect(160, 765, 225, 25, 15);
+        PLAY_CITY_NAME_BUTTON.draw ();
+        
+        fill(colorScheme.ui1);
+        text(city, 175, 783.5);
+        
+        if(substate === "PLAY:cityname"){
+            fill(colorScheme.lightGrey1);
+            rect(125, 600, 290, 150, 10);
+            
+            //Label
+            fill(colorScheme.flatdesign2);
+            textFont(fonts.font2);
+            textSize(25);
+            text("City Name", 135, 635);
+            
+            //Divider
+            fill(colorScheme.white);
+            rect(125, 650, 290, 100, 10);
+            rect(125, 650, 290, 10);
+            
+            
+        }
+        
+        //Happiness
+        
+        if(happiness === 3){
+            happiness_FACE3.draw();
+        }
+        PLAY_HAPPINESS_BUTTON1.draw();
+        
+        if(substate === "PLAY:happiness"){
+            fill(240, 240, 240);
+            rect(145, 300, 290, 450, 10);
+            
+            happiness_FACES(200, 350 + slightWobbleSpeed);
+            
+            if(wobble === true && wobbleHalf === false){
+                slightWobbleSpeed += slightWobble;
+            }
+            
+            if(slightWobbleSpeed >= 4){
+                wobbleHalf = true;
+            }
+            if(wobbleHalf){
+                slightWobbleSpeed -= slightWobble;
+            }
+            if(slightWobbleSpeed <= 0){
+                wobbleHalf = false;
+                wobble = true;
+            }
+            
+            strokeWeight(1.5);
+            stroke(colorScheme.flatdesign3);
+            rect(160, 400, 260, 50, 10);
+            
+            fill(colorScheme.flatdesign1);
+            //Display randomized text based on happiness
+            textFont(fonts.font2);
+            textSize(16);
+            text(DisplayString,175,425);
+            
+            //Overall happiness
+            fill(colorScheme.white);
+            stroke(colorScheme.ui4);
+            rect(250, 315, 170, 65, 10);
+            
+            fill(colorScheme.ui4);
+            textSize(22);
+            text(overallHappiness * 100 + "%", 260, 345);
+            fill(colorScheme.flatdesign1);
+            textSize(15);
+            text("Overall Happiness", 280, 365);
+            
+            //Divider
+            fill(colorScheme.white);
+            noStroke();
+            rect(145, 460, 290, 290, 10);
+            rect(145, 460, 290, 10);
+            
+            //Happiness sliders and text
+            fill(colorScheme.flatdesign2);
+            textSize(16);
+            text("Residencial Happiness:", 160, 490);
+            text("Commercial Happiness:", 160, 560);
+            text("Industrial Happiness:", 160, 630);
+            //Residential
+            
+            colorMode(HSB);
+            strokeWeight(1);
+            for(var i=0; i<255; i++){
+                var q = i;
+                stroke(i/2, i, 255);
+                line(135+30 + q, 500, 140+20 + q, 530);
+            }
+            strokeWeight(3);
+            colorMode(RGB);
+            
+            noStroke();
+            strokeWeight(1);
+            
+            fill(colorScheme.flatdesign3);
+            beginShape();
+            
+            vertex(160, 530);
+            vertex(160, 500);
+            vertex(180, 500);
+            vertex(175, 530);
+            
+            endShape(CLOSE);
+            fill(46, 204, 113, 100);
+            beginShape();
+            
+            vertex(180, 500);
+            vertex(175, 530);
+            vertex(255 * residencialHappiness +160, 530);
+            vertex(255 * residencialHappiness +165, 500);
+            
+            endShape(CLOSE);
+            
+            strokeWeight(1);
+            stroke(colorScheme.flatdesign3);
+            line(255 * residencialHappiness + 165, 500, 255 * residencialHappiness + 160, 530);
+            line(420, 500, 415, 530);
+            
+            //Commercial
+            colorMode(HSB);
+            strokeWeight(1);
+            for(var i=0; i<255; i++){
+                var q = i;
+                stroke(i/2, i, 255);
+                line(135+30 + q, 570, 140+20 + q, 600);
+            }
+            strokeWeight(3);
+            colorMode(RGB);
+            
+            noStroke();
+            strokeWeight(1);
+            
+            fill(colorScheme.flatdesign4);
+            beginShape();
+            
+            vertex(160, 600);
+            vertex(160, 570);
+            vertex(180, 570);
+            vertex(175, 600);
+            
+            endShape(CLOSE);
+            fill(52, 152, 219, 100);
+            beginShape();
+            
+            vertex(180, 570);
+            vertex(175, 600);
+            vertex(255 * commercialHappiness +160, 600);
+            vertex(255 * commercialHappiness +165, 570);
+            
+            endShape(CLOSE);
+            
+            strokeWeight(1);
+            stroke(colorScheme.flatdesign4);
+            line(255 * commercialHappiness + 165, 570, 255 * commercialHappiness + 160, 600);
+            line(420, 570, 415, 600);
+            
+            //Industrial
+            colorMode(HSB);
+            strokeWeight(1);
+            for(var i=0; i<255; i++){
+                var q = i;
+                stroke(i/2, i, 255);
+                line(135+30 + q, 640, 140+20 + q, 670);
+            }
+            strokeWeight(3);
+            colorMode(RGB);
+            
+            noStroke();
+            strokeWeight(1);
+            
+            fill(colorScheme.flatdesign8);
+            beginShape();
+            
+            vertex(160, 670);
+            vertex(160, 640);
+            vertex(180, 640);
+            vertex(175, 670);
+            
+            endShape(CLOSE);
+            fill(241, 196, 15, 100);
+            beginShape();
+            
+            vertex(180, 640);
+            vertex(175, 670);
+            vertex(255 * industrialHappiness +160, 670);
+            vertex(255 * industrialHappiness +165, 640);
+            
+            endShape(CLOSE);
+            
+            strokeWeight(1);
+            stroke(colorScheme.flatdesign8);
+            line(255 * industrialHappiness + 165, 640, 255 * industrialHappiness + 160, 670);
+            line(420, 640, 415, 670);
+        }
+        
+        colorMode(RGB);
+        
+        //Money
+        strokeWeight(0.5);
+        stroke(colorScheme.gcOtl);
+        fill(colorScheme.ui5);
+        rect(435, 765, 225, 25, 15);
+        
+        fill(colorScheme.ui1);
+        textFont(fonts.font1);
+        textSize(15);
+        text(money.amount, 460, 784);
+        textSize(12);
+        text("§", 450, 781.6);
+        
+        PLAY_MONEY_BUTTON1.draw ();
+        
+        if(substate === "PLAY:money"){
+            noStroke();
+            fill(colorScheme.white);
+            
+            //Draw the interface
+            rect(350, 300, 350, 450, 10);
+            
+            fill(240);
+            rect(350, 300, 350, 100, 10);
+            rect(350, 370, 350, 30);
+            
+            //Income
+            fill(colorScheme.flatdesign2);
+            textFont(fonts.font4);
+            textSize(20);
+            textAlign(CENTER);
+            text("Money and Income", 525, 330);
+            
+            //Main income statistics
+            textAlign(BASELINE);
+            fill(colorScheme.green);
+            text("+ " + money.profit, 375, 350);
+            fill(colorScheme.flatdesign9);
+            text("- " + money.expenses, 375, 375);
+            
+            strokeWeight(4);
+            strokeCap (MITER);
+            stroke(colorScheme.flatdesign2);
+            line(350, 400, 700, 400);
+            line(350, 440, 700, 440);
+            
+            if(money.profit - money.expenses > 0){
+                
+            }
+        }
+        
+        //CT-2/002-24's Code starts here
+        textFont(createFont("sans-serif"));
+        
+        if(mouseTick === 1){
+            noStroke();
+            
+            pushMatrix();
+            //Box
+            fill(71, 175, 255);
+            rect(PmouseX, PmouseY, 250, 450, 10);
+            fill(colorScheme.box);
+            rect(PmouseX, PmouseY + 42, 250, 246);
+            rect(PmouseX, PmouseY + 142, 250, 175, 10);
+            //Happiness
+            fill(148, 148, 148);
+            rect(PmouseX + 10, PmouseY + 60, 230, 50, 10);
+            fill(70, 232, 0);
+            ellipse(PmouseX + 35, PmouseY + 85, 35, 35);
+            stroke(20, 130, 0);
+            strokeWeight(1.5);
+            line(PmouseX + 40, PmouseY + 82, PmouseX + 40, PmouseY + 75);
+            line(PmouseX + 30, PmouseY + 82, PmouseX + 30, PmouseY + 75);
+            
+            noFill();
+            arc(PmouseX + 35, PmouseY + 90, 17, 10, 0, 180);
+            
+            //Text
+            fill(colorScheme.white);
+            textSize(buildings[0].textsize);
+            textAlign(CENTER, CENTER);
+            text(buildings[random(0)].name, PmouseX + 123, PmouseY + 25);
+            
+            fill(colorScheme.white);
+            textSize(15);
+            text(generateBuildingSayings, PmouseX + 135, PmouseY + 83);
+            
+            fill(colorScheme.de);
+            stroke(colorScheme.de);
+            //Land Value Slider (ish)
+            {
+            pushMatrix();
+            translate(0, 29);
+            rect(PmouseX + 15, PmouseY + 129, 217, 35, 10);
+            
+            colorMode(HSB);
+            strokeWeight(1);
+            for(var i=0; i<255; i++){
+                var q = i/1.3;
+                stroke(i/2, i, 255);
+                line(PmouseX + q + 29, PmouseY + 131, PmouseX + q + 21, PmouseY + 127 + 35);
+            }
+            strokeWeight(3);
+            colorMode(RGB);
+            stroke(colorScheme.de);
+            line(PmouseX + 21 + 200/255*buildings[0].landValue, PmouseY + 125, PmouseX + 21 + 200/255*buildings[0].landValue, PmouseY + 167);
+            noFill();
+            ellipse(PmouseX + 21 + 200/255*buildings[0].landValue, PmouseY + 109, 29, 30);
+            fill(colorScheme.de);
+            if(buildings[0].landValue >= 0 && buildings[0].landValue <= 255/3 && buildings[0].density === 1){
+                text("§", PmouseX + -63 + 200/255*buildings[0].landValue + 84, PmouseY + 108);
+            }
+            if(buildings[0].landValue >= 255/3 && buildings[0].landValue <= 2*255/3 && buildings[0].density === 2){
+                text("§§", PmouseX + -63 + 200/255*buildings[0].landValue + 84, PmouseY + 108);
+            }
+            if(buildings[0].landValue >= 2*255/3 && buildings[0].landValue <= 255 && buildings[0].density === 3){
+                textSize(13);
+                text("§§§", PmouseX + -63 + 200/255*buildings[0].landValue + 84, PmouseY + 108);
+            
+                textSize(15);
+            }
+            popMatrix();
+        }
+            
+            fill(colorScheme.de);
+            //Education Slider(ish)
+            pushMatrix(); //Hey! Thats not nice! Say sorry to Matrix!
+            
+            translate(0,-75);
+            {
+            pushMatrix();
+            translate(0, 197);
+            rect(PmouseX + 15, PmouseY + 129, 217, 35, 10);
+            
+            colorMode(HSB);
+            strokeWeight(1);
+            for(var i=0; i<255; i++){
+                var q = i/1.3;
+                stroke(i/2, i, 255);
+                line(PmouseX + q + 29, PmouseY + 131, PmouseX + q + 21, PmouseY + 127 + 35);
+            }
+            strokeWeight(3);
+            colorMode(RGB);
+            stroke(colorScheme.de);
+            line(PmouseX + 21 + 200/255*(buildings[0].educationL % 255), PmouseY + 125, PmouseX + 21 + 200/255*(buildings[0].educationL % 255), PmouseY + 167);
+            noFill();
+            ellipse(PmouseX + 21 + 200/255*(buildings[0].educationL % 255), PmouseY + 109, 29, 30);
+            fill(colorScheme.de);
+            if(buildings[0].educationL >= 0 && buildings[0].educationL <= 255){
+                text("🎓", PmouseX + -63 + 200/255*(buildings[0].educationL % 255) + 84, PmouseY + 110);
+            }
+            if(buildings[0].educationL >= 255 && buildings[0].educationL <= 2*255){
+                textSize(10);
+                text("🎓🎓", PmouseX + -63 + 200/255*(buildings[0].educationL % 255) + 84, PmouseY + 110);
+                textSize(15);
+            }
+            if(buildings[0].educationL >= 2*255 && buildings[0].educationL <= 3*255){
+                textSize(10);
+                text("🎓🎓\n🎓", PmouseX + -63 + 200/255*(buildings[0].educationL % 255) + 84, PmouseY + 112);
+                textSize(15);
+            }
+            if(buildings[0].educationL >= 3*255 && buildings[0].educationL <= 4*255){
+                textSize(9);
+                text("🎓🎓\n🎓🎓", PmouseX + -63 + 200/255*(buildings[0].educationL % 255)+ 84, PmouseY + 109);
+                textSize(15);
+            }
+            popMatrix();
+            }
+            
+            
+            popMatrix(); //Matrix is not a balloon!
+            
+            frameTick++; //For later uses.
+            if(frameTick <= 400){
+            //Pie Chart (residents)
+            pushMatrix();
+            translate(0, -75);
+            { 
+                //Thanks, Ashley!
+                var data = [
+                {name: "Seniors", pcent: buildings[0].people.senior*100/buildings[0].people.total},
+                {name: "Adults", pcent: buildings[0].people.adult*100/buildings[0].people.total},
+                {name: "Students", pcent: buildings[0].people.student*100/buildings[0].people.total},
+                {name: "Teens", pcent: buildings[0].people.teen*100/buildings[0].people.total},
+                {name: "Children", pcent: buildings[0].people.child*100/buildings[0].people.total},
+                ];
+                var colour = [
+                color(255, 255, 255),
+                color(189, 232, 255),
+                color(89, 200, 255),
+                color(0, 149, 224),
+                color(0, 136, 204)];
+                
+                var arc360 = [];
+                var currentStop = 360;
+                    
+                
+                for(var a = 0; a<5;a++){
+                    data[a].pcent = round(data[a].pcent);
+                    arc360.push(data[a].pcent*3.6);
+                }
+                noStroke();
+                for(var b = 0; b<5; b++){
+                    fill(colour[b]);
+                    arc(PmouseX + 57,PmouseY + 456,94,94,0,currentStop);
+                    currentStop -= arc360[b];
+                }
+                noStroke();
+                for(var i = 0; i<5; i++){
+                    fill(colour[i]);
+                    text(data[i].name + " - " + data[i].pcent + "% - " + round(buildings[0].people.total*(0.01)*data[i].pcent), PmouseX + 173, PmouseY + 412 + 20*i);
+                }
+            }
+            }else if(frameTick > 400 && frameTick <= 600){
+                translate(0, -75);
+               //Pie Chart (employment)
+                { 
+                //Thanks, Ashley!
+                var coloors = [
+                    color(0, 149, 224),
+                    color(89, 200, 255)
+                    
+                ];
+                var data = [
+                    {name: "Unemployed", pcent: 100 - buildings[0].employedPcent},
+                {name: "     Employed", pcent: buildings[0].employedPcent}
+                
+                ];
+                var colour = [
+                color(255, 255, 255),
+                color(189, 232, 255),
+                color(89, 200, 255),
+                color(0, 149, 224),
+                color(0, 136, 204)];
+                
+                var arc360 = [];
+                var currentStop = 360;
+                    
+                
+                for(var a = 0; a<2;a++){
+                    data[a].pcent = round(data[a].pcent);
+                    arc360.push(data[a].pcent*3.6);
+                }
+                noStroke();
+                for(var b = 0; b<5; b++){
+                    fill(coloors[b]);
+                    arc(PmouseX + 51,PmouseY + 456,94,94,0,currentStop);
+                    currentStop -= arc360[b];
+                }
+                noStroke();
+                for(var i = 0; i<2; i++){
+                    fill(coloors[i]);
+                    text(data[i].name + " - " + data[i].pcent + "% - " + round(buildings[0].people.total*(0.01)*data[i].pcent), PmouseX + 164, PmouseY + 412 + 20*i);
+                }
+            } 
+                //This part is in progress
+            }else{
+                frameTick = 0;
+            }
+            popMatrix();
+        }
+            
+        popMatrix();
+    }
+    
+    if(state === "options"){
+        beginLineMovement = true;
+        background(242, 242, 242);
+        
+        //Title
+        textFont(fonts.font2, 35);
+        text("Options and Settings", 15, 45);
+        
+        //All this is for my obsession with clean, slick interfaces.
+        strokeWeight(2);
+        stroke(colorScheme.gcOtlDRK);
+        line(0, 50, linePos1, 50);
+        stroke(colorScheme.de);
+        line(0, 60, linePos2, 60);
+        stroke(colorScheme.flatdesign3);
+        line(0, 70, linePos3, 70);
+        
+        lnVelo1 += lnAccel1;
+        lnVelo2 += lnAccel2;
+        lnVelo3 += lnAccel3;
+        
+        if(beginLineMovement === true){
+            lnMv1 = true;
+            lnMv2 = true;
+            lnMv3 = true;
+        }
+        
+        if(lnMv1 === true && linePos1 < 250){
+            linePos1 += lnVelo1;
+        } else if (lnVelo1 <= 0){
+            lnVelo1 -= lnAccel1;
+        }
+        
+        if(linePos1 > 150){
+            lnAccel1 = -0.185;
+        }
+        
+        if(lnMv2 === true && linePos2 < 400){
+            linePos2 += lnVelo2;
+        } else if (lnVelo2 <= 0){
+            lnVelo2 -= lnAccel2;
+        }
+        
+        if(linePos2 > 250){
+            lnAccel2 = -0.425;
+        }
+        
+        if(lnMv3 === true && linePos3 < 340){
+            linePos3 += lnVelo3;
+        } else if (lnVelo3 <= 0){
+            lnVelo3 -= lnAccel3;
+        }
+        
+        if(linePos3 > 250){
+            lnAccel3 = 0.2;
+        }
+        
+        //The gears at the top
+        pushMatrix();
+        translate(200, 200);
+        popMatrix();
+        
+        //Buttons and substates
+        noStroke();
+        
+        stroke(colorScheme.flatdesign6);
+        strokeWeight(5);
+        line(0, 140, 1200, 140);
+    
+        if(substate === "OPTIONS_graphics"){
+            noStroke();
+            fill(colorScheme.flatdesign6);
+            rect(25, 125, 151, 12.5);
+        }
+        
+        if(substate === "OPTIONS_gameplay"){
+            noStroke();
+            fill(colorScheme.flatdesign6);
+            rect(180, 125, 151, 12.5);
+        }
+        
+        strokeWeight(1);
+        stroke(colorScheme.flatdesign6);
+        OPTIONS_GRAPHICS_BUTTON1.draw();
+        OPTIONS_GAMEPLAY_BUTTON1.draw();
+        OPTIONS_DEVELOPER_BUTTON1.draw();
+        
+        
+    }
+    
+    //Mouse
+    
+    noStroke();
+    cursor("none");
+    fill(140, 140, 140);
+    triangle(mouseX + 15, mouseY + 11, mouseX - (-3), mouseY - 9 - (-25), mouseX, mouseY);
+    
+    if(width <= 1000 && height <= 500){
+        background(181, 181, 181);
+        state = "screen";
+        
+        strokeCap(ROUND);
+        strokeJoin(ROUND);
+        strokeWeight(10);
+        stroke(0, 0, 0);
+        fill(255, 149, 0);
+        triangle(200, 50, 250, 150, 157.5, 150);
+        
+        textAlign(BASELINE);
+        textFont(fonts.font1);
+        fill(0, 0, 0);
+        textSize(50);
+        text("!", 195, 130);
+        
+        textFont(createFont("monospace"));
+        textAlign(CENTER);
+        text("Warning", 200, 200);
+        textSize(18);
+        text("This program uses a larger canvas\nsceen, which you do not have.\nPlease type in the following to the\nback of the link:\n\n?width=1200&height=800\n", 200, 249);
+    }
+};
